@@ -21,6 +21,10 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 with mlflow.start_run() as run:
+    with open("run_id.txt", "w") as f:
+            f.write(run.info.run_id)
+
+    print(f"Run ID disimpan: {run.info.run_id}")
     model = RandomForestClassifier(
         n_estimators=100,
         class_weight="balanced",
