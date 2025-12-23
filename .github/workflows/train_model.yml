@@ -27,3 +27,9 @@ jobs:
         run: |
           cd MLProject
           python modelling.py
+
+      - name: Upload MLflow artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: mlflow-artifacts
+          path: MLProject/mlruns
