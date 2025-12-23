@@ -21,12 +21,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install mlflow
-          pip install pandas scikit-learn
+          pip install mlflow pandas scikit-learn
 
-      - name: Run MLflow Project
-        env:
-          MLFLOW_DISABLE_CONDA: "true"
+      - name: Run training script
         run: |
           cd MLProject
-          mlflow run .
+          python modelling.py
