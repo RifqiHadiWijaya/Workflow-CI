@@ -1,6 +1,5 @@
-name: fraud-workflow-cli
+name: Training-Workflow
 
-conda_env: conda.yaml
 
 entry_points:
   main:
