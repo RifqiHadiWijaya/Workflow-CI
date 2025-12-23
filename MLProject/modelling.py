@@ -30,7 +30,7 @@ def run_model():
 
     # Gunakan nested=True untuk menghindari error "Active run ID does not match" 
     # jika dijalankan via MLflow Projects/GitHub Actions
-    with mlflow.start_run(nested=True) as run:
+    with mlflow.start_run() as run:
         run_id = run.info.run_id
         
         # Simpan Run ID ke file txt
