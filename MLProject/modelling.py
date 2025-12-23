@@ -5,49 +5,65 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-# Set experiment
-mlflow.set_experiment("Fraud_No_Tuning")
+# 1. Pastikan experiment di-set di awal (Global)
+experiment_name = "Fraud_No_Tuning"
+mlflow.set_experiment(experiment_name)
 
-# Autolog
+# 2. Autolog aktif (Akan mencatat parameter model secara otomatis)
 mlflow.autolog()
 
-df = pd.read_csv("train_fraud.csv")
+def run_model():
+    # Load dataset
+    path = "train_fraud.csv" 
+    df = pd.read_csv(path)
 
-X = df.drop(columns=["Fraud_Label"])
-y = df["Fraud_Label"]
+    # Preprocessing sederhana: Pastikan integer jadi float untuk hindari warning schema
+    for col in df.select_dtypes(include=['int64', 'int32']).columns:
+        df[col] = df[col].astype('float64')
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, stratify=y, random_state=42
-)
+    X = df.drop(columns=["Fraud_Label"])
+    y = df["Fraud_Label"]
 
-with mlflow.start_run() as run:
-    with open("run_id.txt", "w") as f:
-            f.write(run.info.run_id)
-
-    print(f"Run ID disimpan: {run.info.run_id}")
-    model = RandomForestClassifier(
-        n_estimators=100,
-        class_weight="balanced",
-        random_state=42
-    )
-    model.fit(X_train, y_train)
-
-    preds = model.predict(X_test)
-    acc = accuracy_score(y_test, preds)
-
-    mlflow.log_metric("accuracy", acc)
-    mlflow.sklearn.log_model(model, "model")
-
-    print("Accuracy:", acc)
-
-    mlflow.log_metric("accuracy", acc)
-
-    mlflow.sklearn.log_model(
-        sk_model=model,
-        artifact_path="model",
-        input_example=X_train.iloc[:5]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=42
     )
 
-    run_id = run.info.run_id
-    with open("run_id.txt", "w") as f:
-        f.write(run_id)
+    # Gunakan nested=True untuk menghindari error "Active run ID does not match" 
+    # jika dijalankan via MLflow Projects/GitHub Actions
+    with mlflow.start_run(nested=True) as run:
+        run_id = run.info.run_id
+        
+        # Simpan Run ID ke file txt
+        with open("run_id.txt", "w") as f:
+            f.write(run_id)
+
+        print(f"Run ID disimpan: {run_id}")
+
+        # Inisialisasi Model
+        model = RandomForestClassifier(
+            n_estimators=100,
+            class_weight="balanced",
+            random_state=42
+        )
+
+        # Training
+        model.fit(X_train, y_train)
+
+        # Prediksi & Evaluasi
+        preds = model.predict(X_test)
+        acc = accuracy_score(y_test, preds)
+        
+        # Log manual untuk metrik tambahan
+        mlflow.log_metric("accuracy", acc)
+
+        # Log model dengan Input Example untuk menghindari Warning Schema
+        mlflow.sklearn.log_model(
+            sk_model=model,
+            artifact_path="model",
+            input_example=X_train.iloc[:5]
+        )
+
+        print(f"Training selesai. Accuracy: {acc}")
+
+if __name__ == "__main__":
+    run_model()
