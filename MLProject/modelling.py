@@ -20,7 +20,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42
 )
 
-with mlflow.start_run():
+with mlflow.start_run() as run:
     model = RandomForestClassifier(
         n_estimators=100,
         class_weight="balanced",
@@ -35,3 +35,15 @@ with mlflow.start_run():
     mlflow.sklearn.log_model(model, "model")
 
     print("Accuracy:", acc)
+
+    mlflow.log_metric("accuracy", acc)
+
+    mlflow.sklearn.log_model(
+        sk_model=model,
+        artifact_path="model",
+        input_example=X_train.iloc[:5]
+    )
+
+    run_id = run.info.run_id
+    with open("run_id.txt", "w") as f:
+        f.write(run_id)
