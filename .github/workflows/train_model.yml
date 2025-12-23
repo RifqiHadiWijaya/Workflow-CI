@@ -26,7 +26,9 @@ jobs:
       - name: Run training script
         run: |
           cd MLProject
-          python modelling.py
+          mlflow run . \
+            --env-manager=local \
+            --experiment-name "Fraud Predict - Modelling"
 
       - name: Upload MLflow artifacts
         uses: actions/upload-artifact@v4
