@@ -11,7 +11,7 @@ mlflow.set_experiment("Fraud_No_Tuning")
 # Autolog
 mlflow.autolog()
 
-df = pd.read_csv("MLProject/train_fraud.csv")
+df = pd.read_csv("train_fraud.csv")
 
 X = df.drop(columns=["Fraud_Label"])
 y = df["Fraud_Label"]
