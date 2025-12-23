@@ -25,6 +25,8 @@ jobs:
           pip install pandas scikit-learn
 
       - name: Run MLflow Project
+        env:
+          MLFLOW_DISABLE_CONDA: "true"
         run: |
           cd MLProject
-          mlflow run . --no-conda
+          mlflow run .
