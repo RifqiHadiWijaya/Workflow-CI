@@ -1,29 +1,26 @@
-name: Train ML Model CI
+name: Train ML Model
 
 on:
   push:
     paths:
       - MLProject/**
-      - .github/workflows/**
 
 jobs:
   train:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.12
 
-      - name: Install dependencies
-        run: |
-          pip install mlflow pandas scikit-learn
+    - name: Install MLflow
+      run: pip install mlflow
 
-      - name: Run training script
-        run: |
-          cd MLProject
-          python modelling.py
+    - name: Run MLflow Project
+      run: |
+        cd MLProject
+        mlflow run .
