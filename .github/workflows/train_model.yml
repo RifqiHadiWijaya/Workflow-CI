@@ -1,59 +1,84 @@
-name: Train ML Model CI
+name: Train Model CI
 
 on:
   push:
-    paths:
-      - MLProject/**
-      - .github/workflows/**
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  train:
+  train-and-deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
 
-      - name: Install dependencies
-        run: |
-          pip install mlflow pandas scikit-learn
+    - name: Install Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install mlflow
+        pip install -r MLProject/requirements.txt
 
-      - name: Run training script
-        run: |
-          cd MLProject
-          mlflow run . \
-            --env-manager=local \
-            --experiment-name "Fraud Predict - Modelling"
+    # ===============================
+    # Run Training as MLflow Project
+    # ===============================
+    - name: Run MLflow Project
+      run: |
+        cd MLProject
+        mlflow run . \
+          --env-manager=local \
+          --experiment-name "Fraud Prediction - Modelling"
 
-      - name: Upload MLflow artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: mlflow-artifacts
-          path: MLProject/mlruns
+    # ===============================
+    # Upload mlruns (artifact)
+    # ===============================
+    - name: Upload MLflow Artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: mlruns
+        path: MLProject/mlruns/
 
-      # Login Docker Hub
-      - name: Login Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+    # ===============================
+    # Get Run ID
+    # ===============================
+    - name: Get MLflow run_id
+      run: |
+        RUN_ID=$(cat MLProject/run_id.txt)
+        echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+        echo "Run ID: $RUN_ID"
 
-      # Build Docker image using MLflow
-      - name: Build Docker Image
-        run: |
-          cd MLProject
-          RUN_ID=$(cat run_id.txt)
-          mlflow models build-docker \
-            -m runs:/$RUN_ID/model \
-            -n ${{ secrets.DOCKERHUB_USERNAME }}/fraud-model
+    # ===============================
+    # Login Docker Hub
+    # ===============================
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Push Docker image to Docker Hub
-      - name: Push Docker Image
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/fraud-model
-          
+    # ===============================
+    # Build Docker Image
+    # ===============================
+    - name: Build Docker Image with MLflow
+      env:
+        MLFLOW_TRACKING_URI: file:./MLProject/mlruns
+      run: |
+        mlflow models build-docker \
+          --model-uri "runs:/${{ env.RUN_ID }}/model" \
+          --name "student-performance-mlflow" \
+          --enable-mlserver
+
+    - name: Tag Docker Image
+      run: |
+        docker tag student-performance-mlflow \
+          ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow:latest
+
+    - name: Push Docker Image
+      run: |
+        docker push ${{ secrets.DOCKERHUB_USERNAME }}/student-performance-mlflow:latest
