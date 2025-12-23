@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
 # 1. Pastikan experiment di-set di awal (Global)
-experiment_name = "Fraud_No_Tuning"
+experiment_name = "Fraud Detection - Modelling"
 mlflow.set_experiment(experiment_name)
 
 # 2. Autolog aktif (Akan mencatat parameter model secara otomatis)
